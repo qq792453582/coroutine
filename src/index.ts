@@ -1,12 +1,12 @@
 import "@ungap/with-resolvers";
 
-class CoroutineCancelledError extends Error {
+export class CoroutineCancelledError extends Error {
     constructor() {
         super("Coroutine cancelled");
     }
 }
 
-class CoroutineYieldScheduler {
+export class CoroutineYieldScheduler {
     constructor(private work: (project: () => void) => (() => void)) {
     }
 
