@@ -21,5 +21,9 @@
   "homepage": "https://github.com/qq792453582/coroutine#readme",
   "dependencies": {
     "@ungap/with-resolvers": "^0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.1",
+    "typescript": "^5.9.3"
   }
 }
