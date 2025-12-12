@@ -1,0 +1,25 @@
+{
+  "name": "@zeta/coroutine",
+  "version": "0.0.1",
+  "description": "基于 async generator 编写的 coroutine 库",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qq792453582/coroutine.git"
+  },
+  "keywords": [
+    "coroutine"
+  ],
+  "author": "zeta",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/qq792453582/coroutine/issues"
+  },
+  "homepage": "https://github.com/qq792453582/coroutine#readme",
+  "dependencies": {
+    "@ungap/with-resolvers": "^0.1.0"
+  }
+}
