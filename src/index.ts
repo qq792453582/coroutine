@@ -1,38 +1,45 @@
 import "@ungap/with-resolvers";
 
-export class CoroutineCancelledError extends Error {
+export class CoroutineCancelError extends Error {
     constructor() {
         super("Coroutine cancelled");
+        this.name = "CoroutineCancelError";
     }
 }
 
-export class CoroutineYieldScheduler {
-    constructor(private work: (project: () => void) => (() => void)) {
+export class CoroutineYieldScheduler<T = void> {
+    constructor(private work: (project: (value: T) => void) => (() => void)) {
     }
 
-    public schedule(action: () => void): (() => void) {
-        return this.work(action);
+    public schedule(project: (value: T) => void): (() => void) {
+        return this.work(project);
     }
 }
+
+export type CoroutineYieldResult<T> = T extends CoroutineYieldScheduler<infer U> ? U: Awaited<T>;
 
 export type Coroutine<T> = Promise<T> & {
     cancel: () => void
 }
 
-export function startCoroutine<T>(routine: Generator<any, T, void> | AsyncGenerator<any, T, void>): Coroutine<T> {
+export function startCoroutine<T>(routine: Generator<unknown, T, unknown> | AsyncGenerator<unknown, T, unknown>): Coroutine<T> {
     let completed = false;
     let cancelSchedule: (() => void) | undefined;
 
     const { promise, resolve, reject } = Promise.withResolvers<T>();
 
-    (async function continueCoroutine() {
+    (async function continueCoroutine(value: unknown = undefined) {
         try {
             if (cancelSchedule) {
                 cancelSchedule();
                 cancelSchedule = undefined;
             }
 
-            const result = await routine.next();
+            if (completed) {
+                return;
+            }
+
+            const result = await routine.next(value);
 
             if (completed) {
                 return;
@@ -45,15 +52,11 @@ export function startCoroutine<T>(routine: Generator<any, T, void> | AsyncGenera
             }
 
             if (result.value instanceof CoroutineYieldScheduler) {
-                cancelSchedule = result.value.schedule(() => continueCoroutine());
+                cancelSchedule = result.value.schedule(continueCoroutine);
                 return;
             }
 
-            await result.value;
-            if (completed) {
-                return;
-            }
-            return continueCoroutine();
+            continueCoroutine(await result.value);
         }
         catch (e) {
             completed = true;
@@ -72,8 +75,14 @@ export function startCoroutine<T>(routine: Generator<any, T, void> | AsyncGenera
             cancelSchedule = undefined;
         }
 
-        reject(new CoroutineCancelledError());
+        reject(new CoroutineCancelError());
     }
 
     return Object.assign(promise, { cancel });
+}
+
+
+export function* coroutineYield<T>(yieldValue: T) {
+    const value: unknown = yield yieldValue
+    return value as CoroutineYieldResult<T>;
 }
