@@ -64,4 +64,18 @@ describe("startCoroutine", () => {
 		
 		await expect(coroutine).resolves.toBe(8);
 	});
+	
+	it("coroutine generator nest", async () => {
+		function* subRoutine() {
+			const val = yield* coroutineYield(Promise.resolve(10));
+			return val + 5;
+		}
+
+		const coroutine = startCoroutine((function* () {
+			const value = yield* subRoutine();
+			return value + 1;
+		})());
+		
+		await expect(coroutine).resolves.toBe(16);
+	});
 });
