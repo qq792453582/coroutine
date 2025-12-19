@@ -1,58 +1,45 @@
 Example Usage
 ```typescript
-import { clearImmediate } from "node:timers";
+import { CoroutineCancelError, coroutineYield, CoroutineYieldScheduler, startCoroutine } from "@zeta/coroutine";
 
-const waitForTick = new CoroutineYieldScheduler((action) => {
-	const immediate = setImmediate(() => {
-		console.log("waitForTick immediate start");
-		action();
-		console.log("waitForTick immediate end");
+// Helper to create a delay using CoroutineYieldScheduler
+function delay(ms: number) {
+	return new CoroutineYieldScheduler<void>((resolve) => {
+		const id = setTimeout(resolve, ms);
+		return () => clearTimeout(id);
 	});
-	
-	return () => {
-		clearImmediate(immediate);
-	};
+}
+
+function* myGenerator() {
+	console.log("Coroutine started");
+
+	// Yield a Promise using coroutineYield helper to get the type-safe result
+	const value = yield* coroutineYield(Promise.resolve(10));
+	console.log("Yielded Promise value:", value); // 10
+
+	// Yield a custom scheduler (delay)
+	console.log("Waiting for 100ms...");
+	yield delay(100);
+	console.log("Resumed after delay");
+
+	return "Done";
+}
+
+const co = startCoroutine(myGenerator());
+
+// Handle completion
+co.then((result) => {
+	console.log("Coroutine finished with result:", result);
+}).catch((err) => {
+	if (err instanceof CoroutineCancelError) {
+		console.log("Coroutine cancelled");
+	} else {
+		console.error("Coroutine error:", err);
+	}
 });
 
-function* createGenerator() {
-	console.log("waitForTick start");
-	yield waitForTick;
-	console.log("waitForTick end");
-	
-	console.log("1111");
-	yield testWaitResult("1111", 1);
-	console.log("2222");
-	yield testWaitResult("2222", 2);
-	console.log("3333");
-	yield testWaitResult("3333", 3);
-	console.log("createGenerator2");
-	yield* createGenerator2();
-	
-	console.log("createGenerator end");
-	return testWaitResult("end", "end");
-}
-
-function* createGenerator2() {
-	console.log("4444");
-	yield testWaitResult("4444", 4);
-	console.log("5555");
-	yield testWaitResult("5555", 5);
-	console.log("6666");
-	yield testWaitResult("6666", 6);
-	console.log("createGenerator2 end");
-	
-}
-
-const co = startCoroutine(createGenerator());
-(async function test() {
-	try {
-		await co;
-	}
-	catch (e) {
-		console.error(e);
-	}
-	
-})();
-
-waitForSeconds(2.5).then(() => co.cancel());
+// Example of cancellation
+// setTimeout(() => {
+// 	co.cancel();
+// }, 50);
 ```
