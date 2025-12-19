@@ -51,7 +51,29 @@ co.then((result) => {
 });
 
 // Example of cancellation
-// setTimeout(() => {
-// 	co.cancel();
-// }, 50);
+setTimeout(() => {
+	co.cancel();
+}, 50);
+```
+
+## Nested Coroutines
+
+You can compose coroutines by yielding other generators using `yield*`.
+
+```typescript
+function* subRoutine() {
+	const val = yield* coroutineYield(Promise.resolve(10));
+	return val + 5;
+}
+
+function* mainRoutine() {
+	// Use yield* to delegate to another generator
+	const value = yield* subRoutine();
+	console.log("Result from subRoutine:", value); // 15
+	return value + 1;
+}
+
+startCoroutine(mainRoutine()).then((result) => {
+	console.log("Main routine finished:", result); // 16
+});
 ```
